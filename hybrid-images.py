@@ -8,7 +8,7 @@ def scaleSpectrum(A):
    return numpy.real(numpy.log10(numpy.absolute(A) + numpy.ones(A.shape)))
 
 
-# make a spherical gaussian function from the center of the image
+# sample values from a spherical gaussian function from the center of the image
 def makeGaussianFilter(numRows, numCols, sigma, highPass=True):
    centerI = int(numRows/2) + 1 if numRows % 2 == 1 else int(numRows/2)
    centerJ = int(numCols/2) + 1 if numCols % 2 == 1 else int(numCols/2)
@@ -24,7 +24,7 @@ def filterDFT(imageMatrix, filterMatrix):
    shiftedDFT = fftshift(fft2(imageMatrix))
    misc.imsave("dft.png", scaleSpectrum(shiftedDFT))
 
-   filteredDFT = shiftedDFT * filterMatrix # assume filterMatrix is properly normalized
+   filteredDFT = shiftedDFT * filterMatrix
    misc.imsave("filtered-dft.png", scaleSpectrum(filteredDFT))
    return ifft2(ifftshift(filteredDFT))
 
@@ -39,9 +39,15 @@ def highPass(imageMatrix, sigma):
    return filterDFT(imageMatrix, makeGaussianFilter(n, m, sigma, highPass=True))
 
 
-if __name__ == "__main__":
+def hybridImage(highFreqImg, lowFreqImg, sigmaHigh, sigmaLow):
+   highPassed = highPass(highFreqImg, sigmaHigh)
+   lowPassed = lowPass(lowFreqImg, sigmaLow)
+
+   return highPassed + lowPassed
+
+
+def playWithFiltering():
    marilyn = ndimage.imread("marilyn.png", flatten=True)
-   einstein = ndimage.imread("einstein.png", flatten=True)
 
    highPassedMarilyn = highPass(marilyn, 20)
    lowPassedMarilyn = lowPass(marilyn, 20)
@@ -50,3 +56,9 @@ if __name__ == "__main__":
    misc.imsave("high-passed-marilyn.png", numpy.real(highPassedMarilyn))
    misc.imsave("sum-of-marilyns.png", numpy.real((highPassedMarilyn + lowPassedMarilyn)/2.0))
 
+if __name__ == "__main__":
+   einstein = ndimage.imread("einstein.png", flatten=True)
+   marilyn = ndimage.imread("marilyn.png", flatten=True)
+
+   hybrid = hybridImage(einstein, marilyn, 25, 10)
+   misc.imsave("marilyn-einstein.png", numpy.real(hybrid))
